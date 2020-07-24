@@ -1,0 +1,5 @@
+falcon==2.0.0
+psutil==5.7.0
+pypiwin32=223
+pywin32=228
+PyYAML==5.3.1

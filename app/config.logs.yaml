@@ -1,0 +1,87 @@
+version:  1
+
+formatters:
+    main:
+        format: "%(asctime)s-%(thread)d-%(name)s-%(levelname)s: %(message)s"
+    short:
+        format: "%(asctime)s-%(name)s-%(levelname)s: %(message)s"
+    api:
+        format: "%(asctime)s-%(thread)d-%(name)s-%(levelname)s: %(message)s"
+    api.req:
+        format: "%(asctime)s-%(thread)d-%(name)s-%(levelname)s:
+            \nurl: %(url)s
+            \nroute: %(template)s >> %(resource)s >> %(method)s
+            %(query)s
+            %(headers)s
+            %(message)s
+            \n--------------------"
+    api.resp:
+        format: "%(asctime)s-%(thread)d-%(name)s-%(levelname)s-[%(http-status)s]:
+            %(headers)s
+            %(message)s
+            \n===================="
+
+handlers: 
+    main: 
+        class: app.logs.TimedRotatingFileHandlerLogFormat
+        formatter: main
+        level: INFO
+        filename: main.log
+        encoding: utf8
+        when: midnight
+        backupCount: 30
+    api: 
+        class: app.logs.TimedRotatingFileHandlerLogFormat
+        formatter: api
+        level: DEBUG
+        filename: api.log
+        encoding: utf8
+        when: H
+        backupCount: 336
+    api.req: 
+        class: app.logs.TimedRotatingFileHandlerLogFormat
+        formatter: api.req
+        level: DEBUG
+        filename: api.log
+        encoding: utf8
+        when: H
+        backupCount: 336
+    api.resp: 
+        class: app.logs.TimedRotatingFileHandlerLogFormat
+        formatter: api.resp
+        level: DEBUG
+        filename: api.log
+        encoding: utf8
+        when: H
+        backupCount: 336
+    console: 
+        class: logging.StreamHandler
+        formatter: short
+        level: DEBUG
+        stream: "ext://sys.stdout"
+
+loggers: 
+    main: 
+        level: DEBUG
+        handlers: [main, console]
+        propagate: no
+    main.service: 
+        level: DEBUG
+        handlers: [main, console]
+        propagate: no
+    main.app: 
+        level: DEBUG
+        handlers: [main, console]
+        propagate: no
+    api: 
+        level: DEBUG
+        handlers: [api, console]
+        propagate: no
+    api.req: 
+        level: DEBUG
+        handlers: [api.req, console]
+        propagate: no
+    api.resp: 
+        level: DEBUG
+        handlers: [api.resp, console]
+        propagate: no
