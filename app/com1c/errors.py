@@ -1,49 +1,40 @@
 from falcon import HTTPInternalServerError, HTTPBadRequest
 
-from app.errors import OneCSentryError
+from app.errors import MetaError
 
 
-class UnableCreateConnector(HTTPInternalServerError, OneCSentryError):
-    title = 'Unable to create connector'
-
+class UnableCreateConnector(HTTPInternalServerError, metaclass=MetaError):
     def __init__(self, cause):
-        self.prepare(cause)
+        self.title = 'Unable to create connector'
+        self.description = cause
 
 
-class NotConnectAgent(HTTPInternalServerError, OneCSentryError):
-    title = 'Failed to connect to agent'
-
+class NotConnectAgent(HTTPInternalServerError, metaclass=MetaError):
     def __init__(self, cause):
-        self.prepare(cause)
+        self.title = 'Failed to connect to agent'
+        self.description = cause
 
 
-class ClusterNotDefined(HTTPBadRequest, OneCSentryError):
-    title = 'Cluster is not defined'
-
+class ClusterNotDefined(HTTPBadRequest, metaclass=MetaError):
     def __init__(self, cluster_port):
-        self.prepare(
-            f'Cluster not found on port "{cluster_port}"')
+        self.title = 'Cluster is not defined'
+        self.description = f'Cluster not found on port "{cluster_port}"'
 
 
-class InfobaseNotFound(HTTPBadRequest, OneCSentryError):
-    title = 'Infobase not found'
-
+class InfobaseNotFound(HTTPBadRequest, metaclass=MetaError):
     def __init__(self, ib_name):
-        self.prepare(
-            f'Infobase "{ib_name}" not found')
+        self.title = 'Infobase not found'
+        self.description = f'Infobase "{ib_name}" not found'
 
 
-class InfobaseNotRead(HTTPBadRequest, OneCSentryError):
-    title = 'Infobase not read'
-
+class InfobaseNotRead(HTTPBadRequest, metaclass=MetaError):
     def __init__(self, ib_name):
-        self.prepare(
-            f'Infobase "{ib_name}" not read')
+        self.title = 'Infobase not read'
+        self.description = f'Infobase "{ib_name}" not read'
 
 
-class WorkProcessesNotFound(HTTPBadRequest, OneCSentryError):
-    title = 'No active work processes'
-
+class WorkProcessesNotFound(HTTPBadRequest, metaclass=MetaError):
     def __init__(self, cluster_port):
-        self.prepare(
-            f'No active work processes found on cluster "{cluster_port}"')
+        self.title = 'No active work processes'
+        self.description =\
+            f'No active work processes found on cluster "{cluster_port}"'

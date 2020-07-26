@@ -8,14 +8,14 @@ from os.path import isdir
 
 import falcon
 
-from app.common import yload, jdumps
+from app.common import yload, jdumps, Singleton
 
 
 CONFIG_LOGS_FILE = 'config.logs.yaml'
 LOGS_DIR = None
 
 
-class ResourceLogger():
+class ResourceLogger(metaclass=Singleton):
 
     @staticmethod
     def extract_headers(source, headers=''):

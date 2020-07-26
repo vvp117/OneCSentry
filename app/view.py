@@ -25,7 +25,7 @@ class AuthMiddleware(object):
         config = Config()
         if api_key != config.current['api-key']:
             raise falcon.HTTPUnauthorized(
-                title='"API-key" required',
+                title='API-key required',
                 description='Please provide api-key in headers')
 
 

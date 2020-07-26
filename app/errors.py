@@ -1,41 +1,49 @@
+from functools import wraps
+
 from falcon import HTTPInternalServerError
 
 from app.logs import ResourceLogger
 from app.common import jdumps
 
 
-class OneCSentryError(ResourceLogger):
+class MetaError(type):
 
-    def prepare(self, description=None):
-        super(type(self), self).__init__()
-        super().__init__()
+    def __init__(cls, name, bases, attrs):
+        cls.__init__ = MetaError.pre_init(cls.__init__)
 
-        error_title = getattr(self.__class__, 'title', '')
-        if error_title:
-            self.title = error_title
+    @staticmethod
+    def pre_init(orig_init):
+        @wraps(orig_init)
+        def init_wrapper(self, *args, **kwargs):
 
-        if description:
-            self.description = description
+            super(type(self), self).__init__()
+            orig_init(self, *args, **kwargs)
 
-        self.headers = {'onec-sentry-error': self.__class__.__name__}
+            self.headers = {'onec-sentry-error': self.__class__.__name__}
 
-        error_body = {
-            'title': error_title,
-            'description': description,
-        }
-        error_body = jdumps(error_body)
-        self.log_resp(self, error_body, 'onec-sentry-error')
+        return init_wrapper
 
 
-class UnknownError(HTTPInternalServerError, OneCSentryError):
-    title = 'Unknown error'
-
+class UnknownError(HTTPInternalServerError, metaclass=MetaError):
     def __init__(self, cause):
-        self.prepare(cause)
+        self.title = 'Unknown error'
+        self.description = cause
 
 
-class UnderConstruction(HTTPInternalServerError, OneCSentryError):
+class UnderConstruction(HTTPInternalServerError, metaclass=MetaError):
     title = 'Under construction'
 
-    def __init__(self):
-        self.prepare()
+
+class HTTPErrorLogHandler(Exception):
+    @staticmethod
+    def handle(err, req, resp, params):
+        logger = ResourceLogger()
+
+        error_body = {
+            'title': err.title,
+            'description': err.description,
+        }
+
+        logger.log_resp(err, jdumps(error_body), 'onec-sentry-error')
+
+        raise err

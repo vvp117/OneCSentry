@@ -1,10 +1,12 @@
 from wsgiref import simple_server
 from logging import getLogger
 
-import falcon
+from falcon import API
+from falcon.http_error import HTTPError
 
 from app import view
 from app.config import Config
+from app.errors import HTTPErrorLogHandler
 
 
 class OneCSentry():
@@ -13,11 +15,13 @@ class OneCSentry():
         self.log = getLogger('main.app')
         self.log.info('Initialization...')
 
-        self.api = falcon.API(
+        self.api = API(
             middleware=[
                 view.AuthMiddleware()
                 ]
         )
+
+        self.api.add_error_handler(HTTPError, HTTPErrorLogHandler.handle)
 
         self.set_routes()
 

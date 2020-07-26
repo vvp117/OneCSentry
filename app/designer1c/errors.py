@@ -1,18 +1,15 @@
 from falcon import HTTPBadRequest, HTTPInternalServerError
 
-from app.errors import OneCSentryError
+from app.errors import MetaError
 
 
-class ExecutableNotFound(HTTPBadRequest, OneCSentryError):
-    title = 'Executable not found'
-
+class ExecutableNotFound(HTTPBadRequest, metaclass=MetaError):
     def __init__(self, version):
-        self.prepare(
-            f'File 1cv8.exe for version {version} not found')
+        self.title = 'Executable not found'
+        self.description = f'File 1cv8.exe for version {version} not found'
 
 
-class FailedBatchLaunch(HTTPInternalServerError, OneCSentryError):
-    title = 'Failed batch launch'
-
+class FailedBatchLaunch(HTTPInternalServerError, metaclass=MetaError):
     def __init__(self, cause):
-        self.prepare(cause)
+        self.title = 'Failed batch launch'
+        self.description = cause
