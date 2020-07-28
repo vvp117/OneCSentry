@@ -29,6 +29,27 @@ class AuthMiddleware(object):
                 description='Please provide api-key in headers')
 
 
+class BodyTranslator(object):
+
+    def process_request(self, req, resp):
+        req.context.doc = None
+
+        if 'application/json' in req.content_type:
+            try:
+                str_json = req.bounded_stream.read().decode('utf-8')
+                req.context.doc = loads(str_json)
+
+            except (ValueError, UnicodeDecodeError) as err:
+                raise errors_.InvalidRequestBodyJSON(str(err))
+
+        if 'application/octet-stream' in req.content_type:
+            try:
+                req.context.doc = req.bounded_stream.read()
+
+            except ValueError as err:
+                raise errors_.RequestBodyExpected(str(err))
+
+
 class IndexResource(ResourceLogger):
 
     def on_get(self, req, resp):
@@ -79,8 +100,7 @@ class AgentServiceResource(ResourceLogger):
         }
 
         if action not in action_mapping:
-            # TODO: Add special error!
-            raise errors_.UnknownError('Unknown command: {action}')
+            raise errors_.UnknownAction(action)
 
         agent_service = get_agent_service(req)
 
@@ -148,12 +168,10 @@ class InfobaseResource(ResourceLogger):
         self.log_resp(resp, resp.body)
 
     def on_post(self, req, resp, name):
-        try:
-            str_props = req.bounded_stream.read().decode()
-            new_props = loads(str_props)
-        except Exception as err:
-            # TODO: Add special error!
-            raise errors_.UnknownError(str(err))
+        new_props = req.context.doc
+        if not new_props:
+            raise errors_.RequestBodyExpected(
+                'New DB properties expected (JSON)')
 
         self.log_req(req, jdumps(new_props))
 
@@ -168,11 +186,10 @@ class InfobaseResource(ResourceLogger):
         self.log_resp(resp, resp.body)
 
     def on_put_cf_file(self, req, resp, name):
-        cf_bytes = req.bounded_stream.read()
+        cf_bytes = req.context.doc
         if not cf_bytes:
-            # TODO: Add special error!
             self.log_req(req, 'Empty!')
-            raise errors_.UnknownError('No CF-file in body')
+            raise errors_.RequestBodyExpected('No CF-file in body')
 
         self.log_req(req, f'File size {len(cf_bytes)} bytes')
 

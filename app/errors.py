@@ -1,6 +1,6 @@
 from functools import wraps
 
-from falcon import HTTPInternalServerError
+from falcon import HTTPInternalServerError, HTTPBadRequest
 
 from app.logs import ResourceLogger
 from app.common import jdumps
@@ -32,6 +32,27 @@ class UnknownError(HTTPInternalServerError, metaclass=MetaError):
 
 class UnderConstruction(HTTPInternalServerError, metaclass=MetaError):
     title = 'Under construction'
+
+
+class UnknownAction(HTTPBadRequest, metaclass=MetaError):
+    def __init__(self, action):
+        self.title = 'Unknown action'
+        self.description = 'Unknown action: {action}'
+
+
+class InvalidRequestBodyJSON(HTTPBadRequest, metaclass=MetaError):
+    def __init__(self, cause):
+        self.title = 'Invalid request body'
+        self.description =\
+            'Could not decode the request body. The '\
+            'JSON was incorrect or not encoded as UTF-8. '\
+            f'Cause: {cause}'
+
+
+class RequestBodyExpected(HTTPBadRequest, metaclass=MetaError):
+    def __init__(self, cause):
+        self.title = 'Request body expected'
+        self.description = cause
 
 
 class HTTPErrorLogHandler(Exception):

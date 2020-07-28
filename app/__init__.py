@@ -17,7 +17,8 @@ class OneCSentry():
 
         self.api = API(
             middleware=[
-                view.AuthMiddleware()
+                view.AuthMiddleware(),
+                view.BodyTranslator(),
                 ]
         )
 
