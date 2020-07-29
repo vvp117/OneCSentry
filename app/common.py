@@ -1,4 +1,6 @@
 from json import dumps as json_dumps
+from hashlib import sha512
+from uuid import uuid4
 
 from yaml import (SafeLoader,
                   load as yaml_load,
@@ -17,6 +19,20 @@ def ydump(filename, data):
 
 def jdumps(data):
     return json_dumps(data, ensure_ascii=False, indent=4)
+
+
+def hash_secret(secret):
+    salt = uuid4().hex
+    hash_res = sha512(salt.encode() + secret.encode())
+
+    return hash_res.hexdigest() + ':' + salt
+
+
+def check_secret(hashed_secret, secret_to_check):
+    secret_hash, salt = hashed_secret.split(':')
+    hash_res = sha512(salt.encode() + secret_to_check.encode())
+
+    return secret_hash == hash_res.hexdigest()
 
 
 class Singleton(type):

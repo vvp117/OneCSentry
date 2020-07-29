@@ -4,7 +4,7 @@ from sys import argv
 from copy import deepcopy
 from uuid import uuid4
 
-from app.common import yload, ydump, Singleton
+from app.common import yload, ydump, Singleton, hash_secret, sha512
 
 
 CONFIG_KEY = '--config'
@@ -33,11 +33,30 @@ class Config(metaclass=Singleton):
 
     def init_config_file(self):
         init_cfg = deepcopy(self.default)
-        init_cfg['api-key'] = str(uuid4())
+
+        init_cfg['api-key'] = ''
         init_cfg['logs']['dir'] = join(dirname(self.file), 'logs')
 
         ydump(self.file, init_cfg)
 
+    def update_config_file(self):
+        ydump(self.file, self.current)
+
     def read(self):
         read_cfg = yload(self.file)
         self.current.update(read_cfg)
+
+    def generate_api_key(self):
+
+        new_api_key = sha512(str(uuid4()).encode('utf-8')).hexdigest()
+        hash_api_key = hash_secret(new_api_key)
+
+        self.current['api-key'] = hash_api_key
+
+        print(
+            '\n------------------------',
+            'Save your API-key:',
+            new_api_key,
+            '------------------------\n',
+            sep='\n'
+        )

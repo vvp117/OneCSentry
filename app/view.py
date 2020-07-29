@@ -10,7 +10,7 @@ import app.service1c as svc1c
 import app.com1c as com1c
 import app.designer1c as designer1c
 from app.logs import ResourceLogger
-from app.common import jdumps
+from app.common import jdumps, check_secret
 from app.config import Config
 
 
@@ -23,7 +23,7 @@ class AuthMiddleware(object):
         api_key = req.get_header('api-key')
 
         config = Config()
-        if api_key != config.current['api-key']:
+        if not check_secret(config.current['api-key'], api_key):
             raise falcon.HTTPUnauthorized(
                 title='API-key required',
                 description='Please provide api-key in headers')

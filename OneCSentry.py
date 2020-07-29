@@ -22,7 +22,7 @@ def handle_launch(logger_name):
     argv[0] = exec_file
 
     config = Config(exec_dir, as_service)
-    config = Config()
+
     setup_logging(config.current['logs']['dir'])
 
     log = getLogger(logger_name)
@@ -32,6 +32,51 @@ def handle_launch(logger_name):
     log.info(f'getcwd()={getcwd()}')
 
     return as_service, log
+
+
+def reset_api_key(log):
+    log.info('Reset API-key...')
+
+    config = Config()
+    config.generate_api_key()
+    config.update_config_file()
+
+    log.info('API-key reset! Config file updated.')
+
+
+def launch_app(log, as_service):
+    if as_service:
+        log.info('Initialization win-service...')
+
+        sm.Initialize()
+        sm.PrepareToHostSingle(OneCSentryService)
+        sm.StartServiceCtrlDispatcher()
+
+    else:
+        log.debug('Start API debug...')
+
+        onec_sentry = app.OneCSentry()
+        onec_sentry.watch()
+
+
+def process_command_line(log):
+    log.info('Command line processing...')
+
+    if 'debug' in argv:
+        config = Config()
+        log.info('Add args in "argv": '
+                 f'{CONFIG_KEY}, {config.file}')
+        argv.append(CONFIG_KEY)
+        argv.append(config.file)
+
+    win32serviceutil.HandleCommandLine(OneCSentryService)
+
+    if 'install' in argv:
+        config = Config()
+
+        if not config.current['api-key']:
+            config.generate_api_key()
+            config.update_config_file()
 
 
 class OneCSentryService(win32serviceutil.ServiceFramework):
@@ -107,33 +152,17 @@ class OneCSentryService(win32serviceutil.ServiceFramework):
 
 if __name__ == '__main__':
     as_service, log = handle_launch('main')
+
     log.info(f'sys.argv={argv}')
 
-    if len(argv) == 1:
+    if 'reset-api-key' in argv:
+        reset_api_key(log)
+        exit(0)
 
-        if as_service:
-            log.info('Initialization win-service...')
-
-            sm.Initialize()
-            sm.PrepareToHostSingle(OneCSentryService)
-            sm.StartServiceCtrlDispatcher()
-
-        else:
-            log.debug('Start API debug...')
-
-            onec_sentry = app.OneCSentry()
-            onec_sentry.watch()
+    elif len(argv) == 1:
+        launch_app(log, as_service)
 
     else:
-        log.info('Command line processing...')
-
-        if 'debug' in argv:
-            config = Config()
-            log.info('Add args in "argv": '
-                     f'{CONFIG_KEY}, {config.file}')
-            argv.append(CONFIG_KEY)
-            argv.append(config.file)
-
-        win32serviceutil.HandleCommandLine(OneCSentryService)
+        process_command_line(log)
 
     log.info('Exit')
